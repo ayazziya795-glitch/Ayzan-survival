@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="az">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Ayzan Survival</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#101827;color:white;font-family:Arial,sans-serif;overflow:hidden;touch-action:none}
+#game{position:relative;width:100vw;height:100vh;background:#162d27}
+canvas{width:100%;height:100%;display:block}
+#controls{position:fixed;left:25px;bottom:20px;width:210px;height:150px}
+button{position:absolute;width:62px;height:62px;border:2px solid #8b7cff;border-radius:14px;background:#24243a;color:white;font-size:28px;font-weight:bold}
+#up{left:74px;top:0}#left{left:5px;top:65px}#down{left:74px;top:65px}#right{left:143px;top:65px}
+#over{display:none;position:fixed;inset:0;background:#000a;align-items:center;justify-content:center;text-align:center}
+#panel{background:#18243a;border:2px solid #8b7cff;border-radius:18px;padding:28px;font-size:22px}
+#restart{position:static;width:auto;height:auto;padding:12px 22px;font-size:18px;margin-top:15px}
+</style>
+</head>
+<body>
+<div id="game"><canvas id="c"></canvas></div>
+<div id="controls"><button id="up">↑</button><button id="left">←</button><button id="down">↓</button><button id="right">→</button></div>
+<div id="over"><div id="panel"><h1>OYUN BİTDİ!</h1><div id="final"></div><button id="restart">Yenidən başla</button></div></div>
+<script>
+const c=document.getElementById('c'),x=c.getContext('2d');let W,H,p,en=[],coins=[],score=0,hp=3,dead=false;
+let keys={up:0,down:0,left:0,right:0};
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight;p??={x:W/2,y:H/2};p.x=Math.min(W-25,Math.max(25,p.x));p.y=Math.min(H-25,Math.max(75,p.y))}addEventListener('resize',resize);resize();
+function rnd(a,b){return Math.random()*(b-a)+a}
+function coin(){coins.push({x:rnd(30,W-30),y:rnd(85,H-30)})}
+function enemy(){let s=Math.floor(Math.random()*4);en.push(s===0?{x:rnd(20,W-20),y:75}:s===1?{x:rnd(20,W-20),y:H-20}:s===2?{x:20,y:rnd(90,H-20)}:{x:W-20,y:rnd(90,H-20)})}
+for(let i=0;i<5;i++)coin();for(let i=0;i<2;i++)enemy();
+function circle(a,r,col){x.beginPath();x.arc(a.x,a.y,r,0,Math.PI*2);x.fillStyle=col;x.fill()}
+function draw(){
+ x.fillStyle='#101827';x.fillRect(0,0,W,H);x.fillStyle='#162d27';x.fillRect(15,70,W-30,H-85);
+ x.strokeStyle='#4f8a63';x.lineWidth=3;x.strokeRect(15,70,W-30,H-85);
+ coins.forEach(q=>{circle(q,10,'#ffd84d');circle(q,4,'#fff3a3')});
+ en.forEach(q=>{circle(q,18,'#e84a5f');circle({x:q.x-6,y:q.y-4},3,'white');circle({x:q.x+6,y:q.y-4},3,'white')});
+ circle(p,20,'#7c5cff');circle({x:p.x-7,y:p.y-4},3,'white');circle({x:p.x+7,y:p.y-4},3,'white');
+ x.fillStyle='white';x.font='bold 20px Arial';x.fillText('AYZAN SURVIVAL',25,40);x.fillText('XAL: '+score+'   CAN: '+hp,W-180,40);
+}
+let last=performance.now(),spawn=0,ct=0;
+function loop(t){let dt=Math.min(.04,(t-last)/1000);last=t;
+ if(!dead){let dx=(keys.right-keys.left),dy=(keys.down-keys.up);let l=Math.hypot(dx,dy)||1;p.x=Math.max(30,Math.min(W-30,p.x+dx/l*230*dt));p.y=Math.max(85,Math.min(H-30,p.y+dy/l*230*dt));
+ en.forEach(q=>{let dx=p.x-q.x,dy=p.y-q.y,l=Math.hypot(dx,dy)||1;q.x+=dx/l*(55+score*.6)*dt;q.y+=dy/l*(55+score*.6)*dt});
+ for(let i=coins.length-1;i>=0;i--)if(Math.hypot(p.x-coins[i].x,p.y-coins[i].y)<28){coins.splice(i,1);score+=10}
+ for(const q of en)if(Math.hypot(p.x-q.x,p.y-q.y)<30){hp--;p.x=W/2;p.y=H/2;if(hp<=0){dead=true;document.getElementById('final').textContent='Xalın: '+score;document.getElementById('over').style.display='flex'}break}
+ spawn+=dt;ct+=dt;if(spawn>4){spawn=0;enemy()}if(ct>2.5){ct=0;coin()}
+ }draw();requestAnimationFrame(loop)}requestAnimationFrame(loop);
+function bind(id,k){let b=document.getElementById(id);['pointerdown','touchstart'].forEach(e=>b.addEventListener(e,a=>{a.preventDefault();keys[k]=1},{passive:false}));['pointerup','pointercancel','touchend'].forEach(e=>b.addEventListener(e,a=>{a.preventDefault();keys[k]=0},{passive:false}))}
+bind('up','up');bind('down','down');bind('left','left');bind('right','right');
+document.getElementById('restart').onclick=()=>location.reload();
+</script>
+</body>
+</html>
